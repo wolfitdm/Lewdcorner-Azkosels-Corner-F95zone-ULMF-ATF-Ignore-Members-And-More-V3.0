@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lewdcorner/Azkosels Corner/F95zone/ULMF/ATF Ignore Members And More V3.0
 // @namespace    http://tampermonkey.net
-// @version      9.996
+// @version      9.9993
 // @description  ignore members and more in xenforo forums
 // @author       You
 // @match        https://lewdcorner.com/threads/*
@@ -9,15 +9,19 @@
 // @match        https://new.lewdcorner.com/threads/*
 // @match        https://lewdcorner.com/donate/*
 // @match        https://lewdcorner.com/rewards/*
+// @match        https://lewdcorner.com/subscriber-benefits/*
 // @match        https://new.lewdcorner.com/rewards/*
+// @match        https://new.lewdcorner.com/subscriber-benefits/*
 // @match        https://new.lewdcorner.com/donate/*
 // @match        https://new.lewdcorner.com/direct-messages/*
 // @match        https://azkoselscorner.com/index.php?threads/*
 // @match        https://azkoselscorner.com/index.php?direct-messages/*
+// @match        https://azkoselscorner.com/index.php?conversations/*
 // @match        https://azkoselscorner.com/index.php?account/preference*
 // @match        https://azkoselscorner.com/index.php?pages/latestupdates*
 // @match        https://azkoselscorner.com/threads/*
 // @match        https://azkoselscorner.com/direct-messages/*
+// @match        https://azkoselscorner.com/conversations/*
 // @match        https://azkoselscorner.com/account/preference*
 // @match        https://f95zone.to/threads/*
 // @match        https://f95zone.to/direct-messages/*
@@ -115,12 +119,15 @@ var useIgnoreDevsButtons = true; // Account preferences
 var useIgnoreReactionsButtons = true; // Account preferences
 var useIgnoreRanksButtons = true; // Account preferences
 var useIgnoreSignaturesButtons = true; // Account preferences
+var useExpandUserSignaturesButtons = true; // Account preferences
 var useIgnoreBadgesButtons = true; // Account Preferences
 var useKeywordAll = true; // Account preferences
 var ignoreAllAds = true; // Account preferences
 var useNewView = true; // Account preferences
-var useQuickMenuButtonLCVisibleGroups = true; // Account preferences
-var useQuickMenuButtonLCAccountPreferences = true; // Account preferences
+var useQuickMenuButtonLCVisibleGroups = false; // Account preferences
+var useQuickMenuButtonLCAccountPreferences = false; // Account preferences
+var showSignaturesFull = true; // Account preferences
+var showTheHideSignatureButtonOnlyOnHoverInLC = false; // Account preferences
 
 // LC Economy
 
@@ -159,12 +166,14 @@ var ignoreSignaturesAll = false; // Account preferences
 // LC Threads and Direct Messages
 
 var ignoreLCBanners = [];
+var membersSignatureExpandedByDefaultLC = ["user1", "user2", "user3"];
 var ignoreLCBadgesMembers = ["user1", "user2", "user3"];
 var ignoreLCDonationBanners = true; // Account preferences
 var lcFixThreadAndMessagesLinks = true; // Account preferences
 var ignoreLCBadges = false; // Account preferences
 var ignoreMessageBlockedMessageLC = false; // Account preferences
 var ignoreLCWhiteSpaceSoMuchYouCan = false; // Account preferences
+var showAllSignaturesInLC = false; // Account preferences
 
 // ------------------------------------------------
 
@@ -228,6 +237,7 @@ ignoreSignatureMembers = safeArray(ignoreSignatureMembers);
 ignoreSignatureDirectMessagesMembers = safeArray(ignoreSignatureDirectMessagesMembers);
 ignoreLCBanners = safeArray(ignoreLCBanners);
 ignoreLCBadgesMembers = safeArray(ignoreLCBadgesMembers);
+membersSignatureExpandedByDefaultLC = safeArray(membersSignatureExpandedByDefaultLC);
 
 function waitForElement(selector, callback) {
     const observer = new MutationObserver((mutations, observer) => {
@@ -359,12 +369,17 @@ var ignoreSignatureDirectMessagesMembersOriginal = [...ignoreSignatureDirectMess
 var ignoreLCBannersOriginal = [...ignoreLCBanners];
 var ignoreLCBadgesMembersOriginal = [...ignoreLCBadgesMembers];
 var ignoreDevsOriginal = [...ignoreDevs];
+var membersSignatureExpandedByDefaultLCOriginal = [...membersSignatureExpandedByDefaultLC];
 
 setBoolValue("useIgnoreButtons", true);
 useIgnoreButtons = getBoolValue("useIgnoreButtons");
 if (useIgnoreButtons) {
    ignoreLCBanners = GM_getValue("ignoreLCRanks", JSON.stringify(ignoreLCBannersOriginal));
    ignoreLCBanners = JSON.parse(ignoreLCBanners);
+   ignoreLCBanners = safeArray(ignoreLCBanners);
+   membersSignatureExpandedByDefaultLC = GM_getValue("membersSignatureExpandedByDefaultLC", JSON.stringify(membersSignatureExpandedByDefaultLCOriginal));
+   membersSignatureExpandedByDefaultLC = JSON.parse(membersSignatureExpandedByDefaultLC);
+   membersSignatureExpandedByDefaultLC = safeArray(membersSignatureExpandedByDefaultLC);
    ignoreLCBanners = safeArray(ignoreLCBanners);
    ignoreTags = GM_getValue("ignoreXenForoTags", JSON.stringify(ignoreTagsOriginal));
    ignoreTags = JSON.parse(ignoreTags);
@@ -682,6 +697,8 @@ function buildOption(name, value, varName) {
 var elesss = [];
 elesss.push(buildOption("IgnoreAllAds", "Ignore All Ads", "ignoreAllAds"));
 elesss.push(buildOption("IgnoreLCDonationBanners", "Ignore LC Donation Banners", "ignoreLCDonationBanners"));
+elesss.push(buildOption("ShowAllSignaturesInLC", "Expand All Signatures In LC", "showAllSignaturesInLC"));
+elesss.push(buildOption("ShowTheHideSignatureButtonOnlyOnHoverInLC", "Show the Show/Hide Signature button only when you hover over it with the mouse in LC", "showTheHideSignatureButtonOnlyOnHoverInLC"));
 elesss.push(buildOption("LcEnableDisabledButtonsInEconomy", "Enable Disabled Buttons In LC Economy", "lcEnableDisabledButtonsInEconomy"));
 elesss.push(buildOption("LcFixThreadAndMessagesLinks", "Make Threads Clickable in LC Posts", "lcFixThreadAndMessagesLinks"));
 elesss.push(buildOption("IgnoreMessageBlockedMessageLC", "Remove the 'Content is not available by user' message in LC (which appears when a user has ignored you)", "ignoreMessageBlockedMessageLC"));
@@ -689,6 +706,7 @@ elesss.push(buildOption("IgnoreLCWhiteSpaceSoMuchYouCan", "Ignore So Much Whites
 elesss.push(buildOption("IgnoreLCBadgesByClick", "Ignore LC Badges By Click", "ignoreLCBadgesByClick"));
 elesss.push(buildOption("UseQuickMenuButtonLCVisibleGroups", "Use Quick Menu Button Visible Groups In LC", "useQuickMenuButtonLCVisibleGroups"));
 elesss.push(buildOption("UseQuickMenuButtonLCAccountPreferences", "Use Quick Menu Button Account Preferences In LC", "useQuickMenuButtonLCAccountPreferences"));
+elesss.push(buildOption("ShowSignaturesFull", "Display all signatures in full, without any scrolling bullshit", "showSignaturesFull"));
 elesss.push(buildOption("UseNewView", "Use new buttons view", "useNewView"));
 //elesss.push(buildOption("UseIgnoreUserButtons", "Show Ignore Buttons (please dont change that)", "useIgnoreButtons"));
 elesss.push(buildOption("UseXenforoIgnoreUserButton", "Show Xenforo Ignore User Button", "useXenforoIgnoreUserButton"));
@@ -699,7 +717,8 @@ elesss.push(buildOption("UseIgnoreDevsButtons", "Show Xenforo Custom Ignore Devs
 elesss.push(buildOption("UseIgnoreReactionsButtons", "Show Xenforo Custom Ignore Reactions Button", "useIgnoreReactionsButtons"));
 elesss.push(buildOption("UseIgnoreRanksButtons", "Show Xenforo Custom Ignore Ranks Button", "useIgnoreRanksButtons"));
 elesss.push(buildOption("UseIgnoreSignaturesButtons", "Show Xenforo Custom Ignore Signatures Button", "useIgnoreSignaturesButtons"));
-elesss.push(buildOption("UseIgnoreBadgesButtons", "Show Xenforo Custom Ignore Badges Button", "useIgnoreBadgesButtons"));
+elesss.push(buildOption("UseExpandUserSignaturesButtons", "Show Xenforo Custom Expand Signatures Button In LC", "useExpandUserSignaturesButtons"));
+elesss.push(buildOption("UseIgnoreBadgesButtons", "Show Xenforo Custom Ignore Badges Button In LC", "useIgnoreBadgesButtons"));
 elesss.push(buildOption("UseKeywordAll", "You can use the keyword all for ignoring all", "useKeywordAll"));
 elesss.push(buildOption("IgnoreAlsoStartedThreadsByIgnoreMembers", "Ignore Also Started Threads By Ignore Members", "ignoreAlsoStartedThreadsByIgnoreMembers"));
 elesss.push(buildOption("IgnoreAlsoRepliesByIgnoreMembers", "Ignore Also Replies By Ignore Members", "ignoreAlsoRepliesByIgnoreMembers"));
@@ -741,6 +760,8 @@ function reset_my_mess() {
    GM_setValue("ignoreXenForoLCBadgesUsers", JSON.stringify(ignoreLCBadgesMembers));
    ignoreDevs = [...ignoreDevsOriginal];
    GM_setValue("ignoreXenForoDevs", JSON.stringify(ignoreDevs));
+   membersSignatureExpandedByDefaultLC = [...membersSignatureExpandedByDefaultLCOriginal];
+   GM_setValue("membersSignatureExpandedByDefaultLC", JSON.stringify(membersSignatureExpandedByDefaultLC));
    alert("all mess resetted");
 }
 
@@ -751,7 +772,7 @@ function hideXenforoAll(set) {
         hideAll = !hideAll;
         GM_setValue("hideXenforoAll", hideAll);
     }
-    var meSel = ".set_r, .reset_r, .reset_c_sep, .add_tags, .show_tags, .reset_tags, .set_ranks_lc_r, .reset_ranks_lc_r, .set_sig_lc_r, .reset_sig_lc_r, .set_badges_lc_r, .reset_badges_lc_r, .ignore_xenforo_user, .follow_xenforo_user, .ignore_custom_member, .reset_custom_member, .reset_devs, .set_devs";
+    var meSel = ".set_r, .reset_r, .reset_c_sep, .add_tags, .show_tags, .reset_tags, .set_ranks_lc_r, .reset_ranks_lc_r, .set_sig_lc_r, .reset_sig_lc_r, .set_badges_lc_r, .reset_badges_lc_r, .set_expand_lc_r, .reset_expand_lc_r, .ignore_xenforo_user, .follow_xenforo_user, .ignore_custom_member, .reset_custom_member, .reset_devs, .set_devs";
     $(meSel).toggleClass("none", hideAll);
     $(meSel).toggleClass("really", hideAll);
     $("body[data-template=\"thread_view\"] .block--messages article.message.message--post .message-actionBar").toggleClass("really", hideAll);
@@ -920,6 +941,26 @@ function resetSignatureLC(event) {
     window.location.reload();
 }
 
+function setSignatureLCExpanded(event) {
+    var userInput = prompt("Enter multiple users where you want expanded his signature by default separated by commas (e.g., Apple, Banana, Orange), if you want expand all, use the keyword all", membersSignatureExpandedByDefaultLC.join(", "));
+    if (userInput === null) {
+        return false;
+    }
+    var itemsArray = userInput ? userInput.split(',').map(item => item.trim()) : [];
+    itemsArray = safeArray(itemsArray);
+    membersSignatureExpandedByDefaultLC = [...itemsArray];
+    GM_setValue("membersSignatureExpandedByDefaultLC", JSON.stringify(membersSignatureExpandedByDefaultLC));
+    alert("Expanded User signatures are : " + membersSignatureExpandedByDefaultLC.join(", "));
+    window.location.reload();
+}
+
+function resetSignatureLCExpanded(event) {
+    membersSignatureExpandedByDefaultLC = [...membersSignatureExpandedByDefaultLCOriginal];
+    GM_setValue("membersSignatureExpandedByDefaultLC", JSON.stringify(membersSignatureExpandedByDefaultLC));
+    alert("Expanded User signatures are : " + membersSignatureExpandedByDefaultLC.join(", "));
+    window.location.reload();
+}
+
 function setBadgesLC(event) {
     var userInput = prompt("Enter multiple users where you want ignore his badges separated by commas (e.g., Apple, Banana, Orange), if you want ignore all, use the keyword all", ignoreLCBadgesMembers.join(", "));
     if (userInput === null) {
@@ -991,8 +1032,10 @@ function buildHtmlFormSubmit(eles) {
     html += createButton("xenforoResetIgnoreRanks", "Reset Ignore Ranks");
     html += createButton("xenforoSetIgnoreSignatures", "Set Ignore Signatures");
     html += createButton("xenforoResetIgnoreSignatures", "Reset Ignore Signatures");
-    html += createButton("xenforoSetIgnoreBadges", "Set Ignore Badges");
-    html += createButton("xenforoResetIgnoreBadges", "Reset Ignore Badges");
+    html += createButton("xenforoSetExpandSignaturesInLC", "Set Expand User Signatures In LC");
+    html += createButton("xenforoResetExpandSignaturesInLC", "Reset Expand User Signatures In LC");
+    html += createButton("xenforoSetIgnoreBadges", "Set Ignore Badges In LC");
+    html += createButton("xenforoResetIgnoreBadges", "Reset Ignore Badges In LC");
     $('.formSubmitRow').before(html);
     $(".formRow.xenforoResetAllSettings button").on("click", function(event) {
         event.preventDefault();
@@ -1057,12 +1100,22 @@ function buildHtmlFormSubmit(eles) {
     $(".formRow.xenforoSetIgnoreSignatures button").on('click', function(event) {
        event.preventDefault();
        event.stopPropagation();
-       setSignatureLC(event);;
+       setSignatureLC(event);
     });
     $(".formRow.xenforoResetIgnoreSignatures button").on('click', function(event) {
        event.preventDefault();
        event.stopPropagation();
        resetSignatureLC(event);
+    });
+    $(".formRow.xenforoSetExpandSignaturesInLC button").on('click', function(event) {
+       event.preventDefault();
+       event.stopPropagation();
+       setSignatureLCExpanded(event);
+    });
+    $(".formRow.xenforoResetExpandSignaturesInLC button").on('click', function(event) {
+       event.preventDefault();
+       event.stopPropagation();
+       resetSignatureLCExpanded(event);
     });
     $(".formRow.xenforoSetIgnoreBadges button").on('click', function(event) {
        event.preventDefault();
@@ -1123,8 +1176,8 @@ function buildHtmlFormSubmit(eles) {
     });
 }
 
-function buildQuickMenuOptionLC(href, link, name) {
-    return '<li><a href="'+link+'" class="lc-accountMenu-link"><i class="fa--xf far fa-user-slash "><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true"><use href="'+href+'"></use></svg></i><span>'+name+'</span></a></li>';
+function buildQuickMenuOptionLC(className, href, link, name) {
+    return '<li><a href="'+link+'" title="'+name+'" class="lc-accountMenu-link '+className+'"><i class="fa--xf far fa-user-slash "><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true"><use href="'+href+'"></use></svg></i><span>'+name+'</span></a></li>';
 }
 
 
@@ -1133,7 +1186,7 @@ window.addEventListener("load", function() {
       if (homePage.endsWith("account/preferences")) {
           buildHtmlFormSubmit(elesss);
       }
-      if (swLC("/")) {
+      if (thisIsLc) {
           useQuickMenuButtonLCVisibleGroups = getBoolValue("useQuickMenuButtonLCVisibleGroups");
           useQuickMenuButtonLCAccountPreferences = getBoolValue("useQuickMenuButtonLCAccountPreferences");
           if (!useQuickMenuButtonLCVisibleGroups && !useQuickMenuButtonLCAccountPreferences) {
@@ -1143,10 +1196,22 @@ window.addEventListener("load", function() {
              var el = $(".lc-accountMenu-dashboard .lc-accountMenu-section--controls .lc-accountMenu-grid");
              if (el.length) {
                  if (useQuickMenuButtonLCVisibleGroups) {
-                     el.append(buildQuickMenuOptionLC("/data/local/icons/regular.svg?v=1794109202#user-shield", "/account/visible-groups", "Visible Groups"));
+                     var visibleGroups = $(".lc-accountMenu-link[title='Visible user groups']:not(.visibleGroups)");
+                     if (visibleGroups.length > 0) {
+                         visibleGroups.closest("li").remove();
+                     }
+                     if (!$(".lc-accountMenu-link.visibleGroups").length > 0) {
+                         el.append(buildQuickMenuOptionLC("visibleGroups", "/data/local/icons/regular.svg?v=1794342722#users", "/account/visible-groups", "Visible user groups"));
+                     }
                  }
                  if (useQuickMenuButtonLCAccountPreferences) {
-                     el.append(buildQuickMenuOptionLC("/data/local/icons/regular.svg?v=1794109202#id-card", "/account/preferences", "Preferences"));
+                     var preferences = $(".lc-accountMenu-link[title='Preferences']:not(.visiblePreferences)");
+                     if (preferences.length > 0) {
+                         preferences.closest("li").remove();
+                     }
+                     if (!$(".lc-accountMenu-link.visiblePreferences").length > 0) {
+                         el.append(buildQuickMenuOptionLC("visiblePreferences", "/data/local/icons/regular.svg?v=1794342722#sliders-h", "/account/preferences", "Account/Preferences"));
+                     }
                  }
                  clearInterval(iid);
                  return;
@@ -2122,6 +2187,8 @@ ignoreReactionsAll = getBoolValue("ignoreReactionsAll");
 ignoreMembersDirectMessagesReactionsAll = getBoolValue("ignoreMembersDirectMessagesReactionsAll");
 ignoreLCBadges = getBoolValue("ignoreLCBadges");
 ignoreLCWhiteSpaceSoMuchYouCan = getBoolValue("ignoreLCWhiteSpaceSoMuchYouCan");
+showTheHideSignatureButtonOnlyOnHoverInLC = getBoolValue("showTheHideSignatureButtonOnlyOnHoverInLC");
+showSignaturesFull = getBoolValue("showSignaturesFull");
 useIgnoreButtons = getBoolValue("useIgnoreButtons");
 if (ignoreReactionsAll || ignoreMembersDirectMessagesReactionsAll || (ignoreReactionsMembers.includes("all") && useKeywordAll) || (ignoreMembersDirectMessagesReactions.includes("all") && useKeywordAll)) {
   GM_addStyle(cssContent3, "3");
@@ -2143,6 +2210,14 @@ if (ignoreLCWhiteSpaceSoMuchYouCan) {
     GM_addStyle("dl.pairs.pairs--justified { padding: 0 5px 0px 5px !important; }", "8");
 }
 
+if (showTheHideSignatureButtonOnlyOnHoverInLC) {
+    GM_addStyle("body[data-template='thread_view'] aside.message-signature .lc-v3-signature > summary:not(:hover) { opacity: 0 !important; height: 0px !important; opacity: 0 !important; margin: -30px -4px !important; }", "10009999991");
+}
+
+if (showSignaturesFull) {
+    GM_addStyle("body[data-template='thread_view'] aside.message-signature .lc-v3-signature > .bbWrapper, aside.message-signature .bbWrapper { width: 100% !important;  height: 100% !important; overflow: visible !important; max-height: 100% !important; }", "1000999999");
+}
+
 if (useIgnoreButtons) {
 var isLC = thisIsLc;
 
@@ -2160,9 +2235,11 @@ GM_addStyle(".message-attribution-main .set_r, .actionBar-set .actionBar-set--in
 GM_addStyle(".message-attribution-main .reset_ranks_lc_r, .actionBar-set .actionBar-set--internal .reset_ranks_lc_r, .lc-postActionStart .reset_ranks_lc_r { display: inline-block !important; font-size: 12px !important; color: unset !important; }", "1310000");
 GM_addStyle(".message-attribution-main .reset_sig_lc_r, .actionBar-set .actionBar-set--internal .reset_sig_lc_r, .lc-postActionStart .reset_sig_lc_r { display: inline-block !important; font-size: 12px !important; color: unset !important; }", "1310001");
 GM_addStyle(".message-attribution-main .reset_badges_lc_r, .actionBar-set .actionBar-set--internal .reset_badges_lc_r, .lc-postActionStart .reset_badges_lc_r { display: inline-block !important; font-size: 12px !important; color: unset !important; }", "1310002");
+GM_addStyle(".message-attribution-main .reset_expand_lc_r, .actionBar-set .actionBar-set--internal .reset_expand_lc_r, .lc-postActionStart .reset_expand_lc_r { display: inline-block !important; font-size: 12px !important; color: unset !important; }", "1310010");
 GM_addStyle(".message-attribution-main .set_ranks_lc_r, .actionBar-set .actionBar-set--internal .set_ranks_lc_r, .lc-postActionStart .set_ranks_lc_r { display: inline-block !important; font-size: 12px !important; color: unset !important; }", "1310002");
-GM_addStyle(".message-attribution-main .set_sig_lc_r, .actionBar-set .actionBar-set--internal .set_sig_lc_r, .lc-postActionStart .set_sig_lc_r { display: inline-block !important; font-size: 12px !important; color: unset !important; }", "1310002");
+GM_addStyle(".message-attribution-main .set_sig_lc_r, .actionBar-set .actionBar-set--internal .set_sig_lc_r, .lc-postActionStart .set_sig_lc_r { display: inline-block !important; font-size: 12px !important; color: unset !important; }", "1310010");
 GM_addStyle(".message-attribution-main .set_badges_lc_r, .actionBar-set .actionBar-set--internal .set_badges_lc_r, .lc-postActionStart .set_badges_lc_r { display: inline-block !important; font-size: 12px !important; color: unset !important; }", "1310002");
+GM_addStyle(".message-attribution-main .set_expand_lc_r, .actionBar-set .actionBar-set--internal .set_expand_lc_r, .lc-postActionStart .set_expand_lc_r { display: inline-block !important; font-size: 12px !important; color: unset !important; }", "1310011");
 GM_addStyle('body[data-template="thread_view"] .block--messages article.message.message--post .message-attribution a { min-height: 0px !important; font-size: 12px !important; color: unset;}', "1201");
 GM_addStyle('.message-attribution-main .reset_c_sep, .actionBar-set .actionBar-set--internal .reset_c_sep, .lc-postActionStart .reset_c_sep { font-size: 12px !important; }', "1202");
 var linkColor = "color: #1472d7 !important;";
@@ -2171,13 +2248,16 @@ var fontSize = "12";
 GM_addStyle('body[data-template="thread_view"] .block--messages article.message.message--post .message-attribution { font-size: 12px !important; }', "1203");
 GM_addStyle('a.reset_ranks_lc_r, a.set_ranks_lc_r, a.add_tags, a.set_r { font-size: '+fontSize+'px !important; display: inline-block !important; padding: 0px !important; margin: 0px !important; line-height: '+fontSize+'px !important; '+linkColor+' }', "1204");
 GM_addStyle('a.reset_sig_lc_r, a.set_sig_lc_r { font-size: '+fontSize+'px !important; display: inline-block !important; padding: 0px !important; margin: 0px !important; line-height: '+fontSize+'px !important; '+linkColor+' }', "1207");
-GM_addStyle('a.add_tags, a.set_r, a.reset_badges_lc_r, a.set_badges_lc_r, .reset_c_sep, .lc-postActionStart a.add_tags, .lc-postActionStart a.set_r, .lc-postActionStart a.reset_badges_lc_r, .lc-postActionStart a.set_badges_lc_r, .lc-postActionStart .reset_c_sep { font-size: '+fontSize+'px !important; display: inline-block !important; padding: 0px !important; margin: 0px !important; line-height: '+fontSize+'px !important; ' +linkColor+' }', "1208");
+GM_addStyle('a.add_tags, a.set_r, a.reset_badges_lc_r, a.set_badges_lc_r, a.reset_expand_lc_r, a.set_expand_lc_r, .reset_c_sep, .lc-postActionStart a.add_tags, .lc-postActionStart a.set_r, .lc-postActionStart a.reset_badges_lc_r, .lc-postActionStart a.set_badges_lc_r, .lc-postActionStart a.reset_expand_lc_r, .lc-postActionStart a.set_expand_lc_r, .lc-postActionStart .reset_c_sep { font-size: '+fontSize+'px !important; display: inline-block !important; padding: 0px !important; margin: 0px !important; line-height: '+fontSize+'px !important; ' +linkColor+' }', "1208");
 GM_addStyle('.message-attribution-main a.hide_xenforo_all_hide, .message-attribution-main a.hide_xenforo_all_show, .actionBar-set actionBar-set--internal a.hide_xenforo_all_hide, .actionBar-set actionBar-set--internal a.hide_xenforo_all_show { font-size: '+fontSize+'px !important; display: inline-block !important; padding: 0px !important; margin: 0px !important; line-height: '+fontSize+'px !important; color: unset !important;', '1216');
 GM_addStyle('.message-actionBar .actionBar-set { font-size: 13px !important }', '1205');
 GM_addStyle("div.featuredBadges.featuredBadges--message.none { display: none !important; }", "1206");
 if (isLC) {
     GM_addStyle("html#XF body[data-template='thread_view'] .message-attribution-main.open { display: inline-block !important; }", "900000");
 }
+GM_addStyle("div.message-content header.message-attribution a.message-attribution-main { pointer-events: none !important; text-decoration: none !important; }", "900002");
+GM_addStyle("div.message-content header.message-attribution a.message-attribution-main time, div.message-content header.message-attribution a.message-attribution-main a { pointer-events: visible !important; }", "900003");
+GM_addStyle("div.message-content header.message-attribution a.message-attribution-main time:hover, div.message-content header.message-attribution a.message-attribution-main a:hover { text-decoration: underline !important; }", "900003");
 GM_addStyle('body[data-template="thread_view"] .block--messages article.message.message--post .message-actionBar:not(.really) .actionBar-set { flex-wrap: wrap !important }', '1212');
 GM_addStyle('body[data-template="thread_view"] .block--messages article.message.message--post .message-actionBar:not(.really) { flex-wrap: nowrap !important }', '1213');
 GM_addStyle('body[data-template="thread_view"] .block--messages article.message.message--post .message-actionBar:not(.really) .actionBar-set--external { order: 3 !important }', '1214');
@@ -2194,12 +2274,52 @@ function updateButtons() {
     useIgnoreReactionsButtons = getBoolValue("useIgnoreReactionsButtons");
     useIgnoreRanksButtons = getBoolValue("useIgnoreRanksButtons");
     useIgnoreSignaturesButtons = getBoolValue("useIgnoreSignaturesButtons");
+    useExpandUserSignaturesButtons = getBoolValue("useExpandUserSignaturesButtons");
     useIgnoreBadgesButtons = getBoolValue("useIgnoreBadgesButtons");
 }
 
 updateButtons();
 
+var showAllSignaturesSelector = "";
+
+if (isLC) {
+    showAllSignaturesInLC = getBoolValue("showAllSignaturesInLC");
+
+    var showAllSignaturesCssSelectors = [];
+
+    if (!showAllSignaturesInLC) {
+        showAllSignaturesInLC = useKeywordAll && membersSignatureExpandedByDefaultLC.includes("all");
+    }
+
+    if (showAllSignaturesInLC) {
+        showAllSignaturesCssSelectors.push("article.message[data-author]");
+    }
+
+    if (!showAllSignaturesInLC && membersSignatureExpandedByDefaultLC.length > 0) {
+        membersSignatureExpandedByDefaultLC.forEach((element, index) => {
+            showAllSignaturesCssSelectors.push("article.message[data-author='"+ element + "']");
+        });
+    }
+
+    if (showAllSignaturesCssSelectors.length > 0) {
+        showAllSignaturesSelector = showAllSignaturesCssSelectors.join(",");
+        showAllSignaturesSelector += " aside.message-signature details.lc-v3-signature";
+    }
+}
+
 window.addEventListener("load", function() {
+    if (isLC && showAllSignaturesSelector.length > 0) {
+        $(showAllSignaturesSelector).prop('open', true);
+        setTimeout(function() {
+            $(showAllSignaturesSelector).prop('open', true);
+        }, 1000);
+        setTimeout(function() {
+            $(showAllSignaturesSelector).prop('open', true);
+        }, 2000);
+        setTimeout(function() {
+            $(showAllSignaturesSelector).prop('open', true);
+        }, 3000);
+    }
     $("html body div.userBanner.message-userBanner, html body div.f95mb-tags span.f95mb-tag").each(function (index ) {
         var classes = $(this).attr('class');
         var classesArray = classes.split(/\s+/);
@@ -2374,6 +2494,12 @@ window.addEventListener("load", function() {
                           $(puttedElementNew).append("<span class=\"reset_c_sep\">&nbsp;|&nbsp;</span><a class=\"set_badges_lc_r\" href=\"#\">Set Ignore Badges</a>");
                       }
                   }
+                  if (useExpandUserSignaturesButtons) {
+                      if (isLC) {
+                          $(addedElementNew).append("<span class=\"reset_c_sep\">&nbsp;|&nbsp;</span><a class=\"reset_expand_lc_r\" href=\"#\">Reset Expand Sig</a>");
+                          $(puttedElementNew).append("<span class=\"reset_c_sep\">&nbsp;|&nbsp;</span><a class=\"set_expand_lc_r\" href=\"#\">Set Expand Sig</a>");
+                      }
+                  }
                }
             }
        });
@@ -2496,6 +2622,24 @@ window.addEventListener("load", function() {
           });
           $(userItem).on('click', lcSelector + '.reset_badges_lc_r', function(event) {
              resetBadgesLC(event);
+          });
+          $(userItem).on('click', selector + '.set_expand_lc_r', function(event) {
+             setSignatureLCExpanded(event);
+          });
+          $(userItem).on('click', newSelector + '.set_expand_lc_r', function(event) {
+             setSignatureLCExpanded(event);
+          });
+          $(userItem).on('click', lcSelector + '.set_expand_lc_r', function(event) {
+             setSignatureLCExpanded(event);
+          });
+          $(userItem).on('click', selector + '.reset_expand_lc_r', function(event) {
+             resetSignatureLCExpanded(event);
+          });
+          $(userItem).on('click', newSelector + '.reset_expand_lc_r', function(event) {
+             resetSignatureLCExpanded(event);
+          });
+          $(userItem).on('click', lcSelector + '.reset_expand_lc_r', function(event) {
+             resetSignatureLCExpanded(event);
           });
           $(userItem).on('click', selector + '.set_devs', function(event) {
              setDevs(event);

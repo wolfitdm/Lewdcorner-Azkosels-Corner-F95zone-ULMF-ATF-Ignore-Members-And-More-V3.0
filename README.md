@@ -6,6 +6,7 @@ https://greasyfork.org/en/scripts/590203-lewdcorner-azkosels-corner-f95zone-ulmf
 
 and last change log you can found here
 
+http://azkoselscorner.com/index.php?threads/ignore-members-in-xenforo-forums.6655/post-37851
 https://azkoselscorner.com/index.php?threads/ignore-members-in-xenforo-forums.6655/
 
 <img width="948" height="735" alt="image" src="https://github.com/user-attachments/assets/8d74029a-51f4-4e5f-b1d2-ee8686bb7dd4" />
